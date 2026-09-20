@@ -2,7 +2,6 @@ import fs from 'fs';
 import path from 'path';
 import { initDatabase, query } from './connection-sqljs';
 import { initSupabase, getDbClient } from './connection-supabase';
-import { UserModel } from '../models/User';
 
 export async function initializeDatabase(databaseType: string = 'sqlite') {
   try {
@@ -39,11 +38,15 @@ export async function createDefaultAdmin() {
     
     if (databaseType === 'supabase') {
       // Para Supabase, verificar via API
-      const existingAdmin = await UserModel.findByEmail('admin@iptv.com');
+      const client = getDbClient();
+      const { data: existingAdmin } = await client
+        .from('users')
+        .select('*')
+        .eq('email', 'admin@iptv.com')
+        .maybeSingle();
       
       if (!existingAdmin) {
         const hashedPassword = await bcrypt.hash('admin123', 10);
-        const client = getDbClient();
         
         const { data, error } = await client
           .from('users')
