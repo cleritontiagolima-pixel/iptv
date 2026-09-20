@@ -1,4 +1,4 @@
-import { query, getDbClient, getDatabaseType } from '../database/index';
+import { query as sqljsQuery, getDbClient, getDatabaseType } from '../database/index';
 import { User, CreateUserDTO, LoginDTO } from '../types';
 import bcrypt from 'bcryptjs';
 
@@ -23,7 +23,7 @@ export class UserModel {
       if (error) throw error;
       return data as User;
     } else {
-      const result = await query(
+      const result = await sqljsQuery(
         `INSERT INTO users (name, email, password, role, credits)
          VALUES (?, ?, ?, ?, ?)`,
         [
@@ -47,16 +47,19 @@ export class UserModel {
           .from('users')
           .select('*')
           .eq('email', email)
-          .single();
+          .maybeSingle();
         
-        if (error) return null;
+        if (error) {
+          console.error('Erro ao buscar usuário por email no Supabase:', error);
+          return null;
+        }
         return data as User;
       } catch (error) {
         console.error('Erro ao buscar usuário por email no Supabase:', error);
         return null;
       }
     } else {
-      const result = await query(
+      const result = await sqljsQuery(
         'SELECT * FROM users WHERE email = ?',
         [email]
       );
@@ -72,12 +75,12 @@ export class UserModel {
         .from('users')
         .select('*')
         .eq('id', id)
-        .single();
+        .maybeSingle();
       
       if (error) return null;
       return data as User;
     } else {
-      const result = await query(
+      const result = await sqljsQuery(
         'SELECT * FROM users WHERE id = ?',
         [id]
       );
@@ -102,7 +105,7 @@ export class UserModel {
       if (error) throw error;
       return data as User;
     } else {
-      await query(
+      await sqljsQuery(
         `UPDATE users 
          SET credits = credits + ?, updated_at = CURRENT_TIMESTAMP
          WHERE id = ?`,
@@ -126,7 +129,7 @@ export class UserModel {
       if (error) throw error;
       return data as User;
     } else {
-      await query(
+      await sqljsQuery(
         `UPDATE users 
          SET credits = ?, updated_at = CURRENT_TIMESTAMP
          WHERE id = ?`,
@@ -161,7 +164,7 @@ export class UserModel {
 
       queryText += ' ORDER BY created_at DESC';
 
-      const result = await query(queryText, params);
+      const result = await sqljsQuery(queryText, params);
       return result as User[];
     }
   }
@@ -172,7 +175,7 @@ export class UserModel {
       const { error } = await client.from('users').delete().eq('id', id);
       if (error) throw error;
     } else {
-      await query('DELETE FROM users WHERE id = ?', [id]);
+      await sqljsQuery('DELETE FROM users WHERE id = ?', [id]);
     }
   }
 
