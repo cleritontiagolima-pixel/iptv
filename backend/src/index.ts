@@ -16,7 +16,10 @@ const PORT = process.env.PORT || 3001;
 const httpServer = createServer(app);
 
 // Inicializar banco de dados
-initializeDatabase().then(() => {
+const databaseType = process.env.DATABASE_TYPE || 'sqlite';
+console.log(`🗄️  Usando banco de dados: ${databaseType.toUpperCase()}`);
+
+initializeDatabase(databaseType).then(() => {
   createDefaultAdmin();
 }).catch(console.error);
 
@@ -35,7 +38,11 @@ app.use('/api/credits', creditRoutes);
 
 // Rota de saúde
 app.get('/health', (req: Request, res: Response) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  res.json({ 
+    status: 'ok', 
+    timestamp: new Date().toISOString(),
+    database: databaseType
+  });
 });
 
 // Rota para app IPTV obter configuração (sem autenticação)
